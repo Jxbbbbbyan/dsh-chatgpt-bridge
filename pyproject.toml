@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dsh-chatgpt-bridge"
+version = "1.0.0"
+description = "Let any DSH model drive the real ChatGPT sidebar in Edge with a real mouse and keyboard, and read the reply back."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["uiautomation>=2.0.18", "Pillow>=10.0"]
+
+[project.optional-dependencies]
+# The humanised trajectory/typing model used for input timing. Optional: the engine
+# falls back to a built-in minimum-jerk / log-normal model when it is absent.
+humanized = []
+
+[project.scripts]
+dsh-chatgpt-bridge = "dsh_chatgpt_bridge.core:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
