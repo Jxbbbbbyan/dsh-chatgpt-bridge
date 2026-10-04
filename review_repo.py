@@ -34,8 +34,21 @@ def check_junk() -> None:
         notes.append(f"removed build junk: {path.relative_to(REPO)}")
 
 
+SKIP_DIRS = {".git", "__pycache__", ".venv", "build", "dist"}
+
+
+def iter_files():
+    """Every tracked-looking file, skipping VCS metadata and build output."""
+    for path in REPO.rglob("*"):
+        if not path.is_file():
+            continue
+        if any(part in SKIP_DIRS for part in path.relative_to(REPO).parts):
+            continue
+        yield path
+
+
 def markdown_files() -> list[Path]:
-    return [p for p in REPO.rglob("*.md") if p.is_file()]
+    return [p for p in iter_files() if p.suffix == ".md"]
 
 
 def check_links() -> None:
@@ -54,8 +67,8 @@ def check_links() -> None:
 
 
 def check_absolute_paths() -> None:
-    for path in REPO.rglob("*"):
-        if not path.is_file() or path.suffix in {".png", ".jpg", ".pyc"}:
+    for path in iter_files():
+        if path.suffix in {".png", ".jpg", ".pyc"}:
             continue
         try:
             text = path.read_text(encoding="utf-8")
@@ -68,8 +81,8 @@ def check_absolute_paths() -> None:
 
 
 def check_encoding_and_newline() -> None:
-    for path in REPO.rglob("*"):
-        if not path.is_file() or path.suffix in {".png", ".jpg", ".pyc"}:
+    for path in iter_files():
+        if path.suffix in {".png", ".jpg", ".pyc"}:
             continue
         try:
             text = path.read_text(encoding="utf-8")
@@ -142,7 +155,7 @@ def main() -> int:
     check_skills()
     check_example()
 
-    files = [p for p in REPO.rglob("*") if p.is_file()]
+    files = list(iter_files())
     total = sum(p.stat().st_size for p in files)
     print(f"repo: {REPO}")
     print(f"files: {len(files)}   bytes: {total:,}")
