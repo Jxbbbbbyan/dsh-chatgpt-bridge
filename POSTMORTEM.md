@@ -132,3 +132,14 @@
   ② 任何有持久副作用的动作，事后必须用服务端记录核对（GitHub 公开仓库用 REST API 即可，无需令牌）（H-23）。
 
 **共同根因**：仍然是"在错误的抽象层次上做决定"——把浏览器当成无主的、把点击当成事实。
+
+
+### E-15 九轮网页上传零提交，一次 `git push` 全部落地
+- **现象**：网页控制台九批上传逐条打印 `commit requested`，GitHub API 始终报 `Git Repository is empty`（409）；
+  换成 `git push` 后立刻 `* [new branch] main -> main`，API 确认 **43 个文件**。
+- **叠加的三个坑**：
+  1. `Commit changes` 同时是 `ButtonControl`（按钮）和 `TextControl`（标签），查找返回了标签；
+  2. 空仓库没有 `main` 分支，`/upload/main/<目录>` 会被重定向回仓库首页（页面提示 "Select a branch to upload files"）；
+  3. 全程只信控制台回显，没有做服务端验证。
+- **规则**：内容传输用 git，不用浏览器表单；先 `git credential fill` 看本机有没有凭据（H-24）。
+  浏览器自动化留给 git 做不到的事（改名、About、标签），且每一步都要服务端复核（H-23）。

@@ -357,3 +357,23 @@ Invoke-RestMethod "https://api.github.com/repos/<owner>/<repo>/git/trees/main?re
 from the server's own record — for GitHub that is the public REST API, which needs no token for a
 public repository — and compare against the state before the action. Prefer this over reading the
 page, which can serve a stale accessibility tree.
+
+
+**H-24 — Before automating a web console, check whether the machine already holds a credential
+for it.** Content transfer belongs to `git`, not to a browser form.
+
+*Incident:* nine web-console upload batches reported `commit requested` and produced **zero**
+commits — first because the commit lookup returned a *label* rather than the *button*, then
+because an empty repository has no branch for `/upload/<branch>` to target (it redirects to the
+repo home, where the page says "Select a branch to upload files"). One `git push` against the
+credential Git Credential Manager already held moved the entire 43-file tree, with structure
+intact, in a single operation.
+
+*Rule:* ask `git credential fill` first. A push is exact, preserves paths, carries a real commit
+message, and is verifiable with one API call. Reserve browser automation for the things git
+cannot do — renaming a repository, editing About, setting topics — and verify each of those on
+the server afterwards (H-23).
+
+**Trap worth naming:** on an **empty** repository, `/<repo>/upload/<branch>` cannot work, because
+the branch does not exist yet. The first commit has to come from somewhere else — a clone and
+push, the web editor, or an upload form reached from the repo home page rather than by URL.
