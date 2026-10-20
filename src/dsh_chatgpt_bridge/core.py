@@ -1211,14 +1211,14 @@ def cmd_paste(args: argparse.Namespace) -> int:
     expected = None
     if args.expect_file:
         expected = Path(args.expect_file).read_text(encoding="utf-8").rstrip()
-            # Fail closed on an empty expectation: an empty string is a substring of
-            # every composer, so an empty or whitespace-only expectation file would
-            # authorise acting on ANY content - the opposite of its purpose.
-            if not expected.strip():
-                raise InputAborted(
-                    f"expectation file {args.expect_file} is empty or whitespace-only; "
-                    "refusing to act, because an empty expectation matches everything"
-                )
+        # Fail closed on an empty expectation: an empty string is a substring of
+        # every composer, so an empty or whitespace-only expectation file would
+        # authorise acting on ANY content - the opposite of its purpose.
+        if not expected.strip():
+            raise InputAborted(
+                f"expectation file {args.expect_file} is empty or whitespace-only; "
+                "refusing to act, because an empty expectation matches everything"
+            )
     try:
         if not click_composer(target, emitter):
             raise InputAborted("could not focus the composer before pasting")
@@ -1315,14 +1315,14 @@ def cmd_send(args: argparse.Namespace) -> int:
         print(f"composer holds {len(typed)} chars and {attached_count(target)} attachment(s)")
         if args.expect_file:
             expected = Path(args.expect_file).read_text(encoding="utf-8").rstrip()
-                # Fail closed on an empty expectation: an empty string is a substring of
-                # every composer, so an empty or whitespace-only expectation file would
-                # authorise acting on ANY content - the opposite of its purpose.
-                if not expected.strip():
-                    raise InputAborted(
-                        f"expectation file {args.expect_file} is empty or whitespace-only; "
-                        "refusing to act, because an empty expectation matches everything"
-                    )
+            # Fail closed on an empty expectation: an empty string is a substring of
+            # every composer, so an empty or whitespace-only expectation file would
+            # authorise acting on ANY content - the opposite of its purpose.
+            if not expected.strip():
+                raise InputAborted(
+                    f"expectation file {args.expect_file} is empty or whitespace-only; "
+                    "refusing to act, because an empty expectation matches everything"
+                )
             if normalize_for_compare(expected) not in normalize_for_compare(typed):
                 raise InputAborted("the composer does not hold the expected text; not sending")
             print("composer text matches the expected prompt")
