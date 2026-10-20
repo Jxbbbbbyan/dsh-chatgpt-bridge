@@ -30,7 +30,7 @@ A real task: the user supplied one **640 × 8260 px** screenshot of an article a
 | Step | Command | Evidence |
 |---|---|---|
 | Slice the long image | `python slice_task_image.py` | 6 slices of 640×1700, 100 px overlap |
-| Attach them | `python sidebar_bridge.py attach-files task\slice-0*.png` | 6 attachments in the composer |
+| Attach them | `python -m dsh_chatgpt_bridge.cli attach-files` over an explicitly expanded file list | 6 attachments, count printed and verified by hand |
 | Type the brief | `python sidebar_bridge.py ask --prompt-file task\brief.txt` | composer held 417 chars |
 | Read the reply | (returned by `ask`) | 3869-character essay, titled, names the article's clownish parts |
 
@@ -85,8 +85,10 @@ file-name field, types the quoted space-separated paths, and presses Enter. Four
    `GetFocusedControl()` is the composer or a descendant, retrying up to three times, and
    **aborts instead of typing** if it cannot. Without this, a missed click sprays keystrokes into
    whatever window does have focus — including the agent's own host application.
-2. **The composer text is verified before Enter.** If it does not match the intended prompt, the
-   run aborts and **nothing is sent**. This is what caught both the newline-splitting bug and the
+2. **The composer text is checked before Enter** by normalized containment (blank lines and
+   surrounding whitespace are stripped; it is a substring test, not equality). If it does not
+   match, the run aborts **before Enter** - but text may already be in the composer, because an
+   abort is not a rollback. This is what caught both the newline-splitting bug and the
    list-marker duplication.
 3. **Recovery exists.** `reset-composer` removes every attachment (`Remove <name>` buttons) and
    clears the text; `send --expect-file <path>` sends a message a previous run left sitting in the
@@ -106,15 +108,18 @@ Set-Location "."
 & $py .\sidebar_bridge.py dump --depth 16       # the sidebar's UIA subtree
 
 & $py .\slice_task_image.py                     # 640x8260 screenshot -> 6 readable slices
-& $py .\sidebar_bridge.py attach-files task\slice-0*.png
+$files = (Get-ChildItem .\task\slice-0*.png | Sort-Object Name).FullName
+& $py .\sidebar_bridge.py attach-files @files   # PowerShell does not expand the glob for a native program
 & $py .\sidebar_bridge.py ask --prompt-file task\brief.txt --reply-timeout 540 --settle 6
 
 & $py .\sidebar_bridge.py reset-composer        # recovery: drop attachments, clear text
 & $py .\sidebar_bridge.py send --expect-file task\brief.txt
 ```
 
-`ask` is safe by default: it refuses to type without focus and refuses to send without a text
-match. Exit code 2 means it aborted before touching the keyboard.
+`ask` fails closed by design: it refuses to type without focus and refuses to send without a text
+match. Exit code 2 means it aborted - but input caps or a late mismatch can be reached **after**
+typing has started, so an abort does not guarantee the keyboard was untouched. Inspect the
+composer and the conversation before retrying.
 
 | File | Role |
 |---|---|
@@ -147,8 +152,9 @@ Set-Location "."
 ```
 
 A green run prints the composer focus line, the post-typing character count, `sent (Enter)`, then
-the reply. `ABORTED: …` means nothing was typed or sent — read the reason, fix it, and use
-`send --expect-file` if the message survived in the composer.
+the reply. `ABORTED: …` means the run stopped, **not** that nothing happened: text may already be
+in the composer and attachments may already be uploaded. Read the reason, inspect the
+conversation, and use `send --expect-file` only if what survived is what you intended.
 
 ## Related
 

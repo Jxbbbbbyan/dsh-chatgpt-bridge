@@ -793,7 +793,13 @@ def attach_from_clipboard(target: Target, emitter: Emitter, *, wait_s: float = 9
     except Exception as exc:  # pragma: no cover - screenshot is diagnostic only
         print(f"screenshot failed: {exc}")
 
-    return AttachResult(accepted=bool(added), new_names=added, screenshot=shot)
+    # Success needs evidence of an attachment, not merely "some node appeared".
+    # A timeout with an unrelated new node used to report accepted=True.
+    _joined = " | ".join(added).lower()
+    _accepted = bool(added) and any(
+        k in _joined for k in (".png", ".jpg", "image", "remove", "attachment", "upload")
+    )
+    return AttachResult(accepted=_accepted, new_names=added, screenshot=shot)
 
 
 def cmd_attach(args: argparse.Namespace) -> int:
@@ -993,7 +999,13 @@ def wait_for_attachments(target: Target, before: set[str], *, wait_s: float,
         shot = str(path)
     except Exception as exc:  # pragma: no cover - diagnostic only
         print(f"screenshot failed: {exc}")
-    return AttachResult(accepted=bool(added), new_names=added, screenshot=shot)
+    # Success needs evidence of an attachment, not merely "some node appeared".
+    # A timeout with an unrelated new node used to report accepted=True.
+    _joined = " | ".join(added).lower()
+    _accepted = bool(added) and any(
+        k in _joined for k in (".png", ".jpg", "image", "remove", "attachment", "upload")
+    )
+    return AttachResult(accepted=_accepted, new_names=added, screenshot=shot)
 
 
 def report_attachment_result(result: AttachResult) -> int:
@@ -1199,6 +1211,14 @@ def cmd_paste(args: argparse.Namespace) -> int:
     expected = None
     if args.expect_file:
         expected = Path(args.expect_file).read_text(encoding="utf-8").rstrip()
+            # Fail closed on an empty expectation: an empty string is a substring of
+            # every composer, so an empty or whitespace-only expectation file would
+            # authorise acting on ANY content - the opposite of its purpose.
+            if not expected.strip():
+                raise InputAborted(
+                    f"expectation file {args.expect_file} is empty or whitespace-only; "
+                    "refusing to act, because an empty expectation matches everything"
+                )
     try:
         if not click_composer(target, emitter):
             raise InputAborted("could not focus the composer before pasting")
@@ -1295,6 +1315,14 @@ def cmd_send(args: argparse.Namespace) -> int:
         print(f"composer holds {len(typed)} chars and {attached_count(target)} attachment(s)")
         if args.expect_file:
             expected = Path(args.expect_file).read_text(encoding="utf-8").rstrip()
+                # Fail closed on an empty expectation: an empty string is a substring of
+                # every composer, so an empty or whitespace-only expectation file would
+                # authorise acting on ANY content - the opposite of its purpose.
+                if not expected.strip():
+                    raise InputAborted(
+                        f"expectation file {args.expect_file} is empty or whitespace-only; "
+                        "refusing to act, because an empty expectation matches everything"
+                    )
             if normalize_for_compare(expected) not in normalize_for_compare(typed):
                 raise InputAborted("the composer does not hold the expected text; not sending")
             print("composer text matches the expected prompt")
