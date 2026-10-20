@@ -61,7 +61,10 @@ prompt would otherwise be sent.
 ## Attaching files and long screenshots
 
 ```powershell
-dsh-chatgpt-bridge attach-files slices\slice-0*.png     # real UI: + → Files and folders → Open dialog
+$files = (Get-ChildItem .\slices\slice-0*.png | Sort-Object Name).FullName
+dsh-chatgpt-bridge attach-files @files
+# the shell does NOT expand the glob for a native program; let PowerShell expand it
+# real UI: + → Files and folders → Open dialog
 dsh-chatgpt-bridge ask --prompt-file brief.txt          # prompts read from a UTF-8 file
 ```
 
@@ -72,7 +75,7 @@ read**. `dsh_chatgpt_bridge.slicer` cuts it into overlapping, still-legible slic
 python -m dsh_chatgpt_bridge.slicer long-screenshot.jpg slices
 ```
 
-Six 640×1700 slices from one 640×8260 screenshot, attached in length-bounded batches because the
+Six slices from one 640×8260 screenshot (five at 640×1700, the last at 640×260), attached in length-bounded batches because the
 file dialog's name field truncates silently near 256 characters. The full procedure, with the four
 rules that make it reliable, is in [docs/LONG-SCREENSHOTS.md](docs/LONG-SCREENSHOTS.md).
 
@@ -80,9 +83,9 @@ rules that make it reliable, is in [docs/LONG-SCREENSHOTS.md](docs/LONG-SCREENSH
 
 Real input means the human cannot use their own machine while a run is in progress. So:
 
-- **Escape is the panic key**, checked before every emitted event.
+- **Escape is the panic key.** It is checked at guarded input boundaries — before a batch, not before every single emitted event — and reply polling does not check it.
 - Every run carries **wall-clock, event-count and cursor-distance caps**.
-- The **cursor is restored** when a run finishes or aborts.
+- Cursor restoration is **best effort**: if an input cap is exceeded or Escape stays held, the restore call can itself fail.
 - The tool **aborts rather than guessing** — no focus, no typing; no matching text, no Enter.
 
 This drives *your* session with *your* account. It is not a way to evade a service's controls, and it
@@ -98,6 +101,12 @@ Chinese rebuttal essay** — written entirely by ChatGPT.
 - [examples/undergrad-rebuttal/](examples/undergrad-rebuttal/) — the brief, the follow-up, the
   finished essay, the six slices, and ChatGPT's **verbatim transcript**
 
+## What it cannot protect you from
+
+- **A changed ChatGPT UI.** Control lookup and reply extraction depend on the current Edge and ChatGPT accessibility tree, including English chrome labels. A UI or localization change can break lookup, or silently return partial text.
+- **Focus stolen mid-run.** Targeting reduces risk; it does not eliminate it. If another window takes focus while text is being typed, input can land elsewhere. Stay hands-off while a run is in progress.
+- **Your account and the service terms.** Automating a logged-in ChatGPT session is still automation of that service; account restrictions and quotas can apply. "No API key" does not mean unrestricted or guaranteed-permitted use — check the current terms.
+- **Private content in diagnostics.** Attachment runs can leave screenshots (for example `sidebar-after-attach.png`) in the bridge state directory, and a full-screen capture includes everything else that was on screen. Treat those files as private and keep them out of git.
 ## What this is not
 
 - Not an API client, and not a wrapper around one.

@@ -109,7 +109,7 @@ Environment variables:
 | `click NAME` | click a named button in the sidebar | nothing |
 | `type-keys [text] [--prompt-file F] [--enter]` | type into whatever has focus (native dialogs) | nothing |
 
-Exit codes: `0` success, `1` precondition failed, `2` aborted safely (nothing was typed or sent).
+Exit codes: `0` success, `1` precondition failed, `2` aborted. **An abort stops further actions; it does not roll anything back.** Text may already be in the composer, attachments may already be uploaded, and an early batch may have completed — inspect the conversation before retrying.
 
 ## 5. Extending it to another surface
 

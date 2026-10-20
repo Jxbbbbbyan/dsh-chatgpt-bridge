@@ -18,7 +18,7 @@ A chat UI resizes an image for its vision model by fitting it into a bounded box
 image is therefore scaled down by roughly **4×** in its long dimension, and 12 px body text becomes
 unreadable. The model receives a picture, but not the article.
 
-**Rule:** if the long side exceeds ~2000 px, slice before sending.
+**Working rule, not a measured platform limit:** if the long side exceeds ~2000 px, slice before sending. The ~2000 px threshold and the ~4× downscale are observations from this setup, not documented ChatGPT limits.
 
 ## Step 2 — Slicing with overlap
 
@@ -57,7 +57,8 @@ the slice count, the ordering, and the overlap.
 ## Step 4 — Attaching through the real user interface
 
 ```powershell
-dsh-chatgpt-bridge attach-files slices\slice-0*.png
+$files = (Get-ChildItem .\slices\slice-0*.png | Sort-Object Name).FullName
+dsh-chatgpt-bridge attach-files @files
 ```
 
 The tool performs, with real input:
@@ -73,7 +74,7 @@ The tool performs, with real input:
 **R-1 — Batch by character budget.** The dialog's file-name field **truncates near 256 characters and
 reports no error**. Six paths of ~64 characters (384 total) produced exactly **three** attachments,
 with the UI reporting success. `--chunk-chars` (default 200) splits the list, and the running count is
-asserted after every batch. Six slices went in as three batches of two.
+printed after every batch but **not asserted** — verify the exact count and filenames yourself. Six slices went in as three batches of two.
 
 **R-2 — Find the dialog through Win32, not UI Automation.** An owned modal dialog can be absent from
 `GetRootControl().GetChildren()` while plainly on screen. Enumerating it that way led to the

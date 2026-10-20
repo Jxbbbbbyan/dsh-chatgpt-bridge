@@ -141,5 +141,5 @@
   1. `Commit changes` 同时是 `ButtonControl`（按钮）和 `TextControl`（标签），查找返回了标签；
   2. 空仓库没有 `main` 分支，`/upload/main/<目录>` 会被重定向回仓库首页（页面提示 "Select a branch to upload files"）；
   3. 全程只信控制台回显，没有做服务端验证。
-- **规则**：内容传输用 git，不用浏览器表单；先 `git credential fill` 看本机有没有凭据（H-24）。
+- **规则**：内容传输用 git，不用浏览器表单；先确认本机已有 git 凭据，用**不打印密钥**的方式验证（例如 `git ls-remote`）；**不要**直接跑 `git credential fill`，它会把用户名与令牌写到标准输出，进入对话记录与命令日志（H-24 修正）。
   浏览器自动化留给 git 做不到的事（改名、About、标签），且每一步都要服务端复核（H-23）。

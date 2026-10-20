@@ -12,7 +12,6 @@ Checks the things that actually break a published repo:
 from __future__ import annotations
 
 import re
-import shutil
 import sys
 from pathlib import Path
 
@@ -25,13 +24,24 @@ notes: list[str] = []
 
 
 def check_junk() -> None:
-    junk = [p for p in REPO.rglob("*") if p.is_dir() and p.name == "__pycache__"]
-    for directory in junk:
-        shutil.rmtree(directory)
-        notes.append(f"removed build junk: {directory.relative_to(REPO)}")
+    """Report build junk only. This script never deletes anything.
+
+    It used to shutil.rmtree every __pycache__ it found and unlink every .pyc.
+    Those directories are not created by this script and it could not prove it
+    owned them, so a "review" step could destroy files nobody asked it to touch.
+    Cleanup is now a separate, explicit decision for the operator - preview with
+    `git clean -xdn`, then `git clean -xdf` if the list is what you expect.
+    """
+    for directory in [p for p in REPO.rglob("*") if p.is_dir() and p.name == "__pycache__"]:
+        problems.append(
+            f"build junk present: {directory.relative_to(REPO)}/"
+            " (review only, nothing deleted)"
+        )
     for path in REPO.rglob("*.pyc"):
-        path.unlink()
-        notes.append(f"removed build junk: {path.relative_to(REPO)}")
+        problems.append(
+            f"build junk present: {path.relative_to(REPO)}"
+            " (review only, nothing deleted)"
+        )
 
 
 SKIP_DIRS = {".git", "__pycache__", ".venv", "build", "dist"}
@@ -66,6 +76,24 @@ def check_links() -> None:
                 problems.append(f"broken link in {path.relative_to(REPO)}: {target}")
 
 
+# Generic machine-path detection.
+#
+# This used to look for three hardcoded needles naming one particular account and
+# one drive layout. That both fingerprinted the author's machine and missed every
+# other user. The patterns are assembled from fragments so this file cannot match
+# itself, and they cover any user profile, any conda install and Program Files on
+# any drive. Documented placeholders such as C:\path\to are deliberately NOT
+# matched: they are illustrative, not machine-specific.
+_DRIVE = r"[A-Za-z]:\\"
+MACHINE_PATH_PATTERNS = (
+    re.compile(_DRIVE + r"Users\\[^\\\s\"'<>|]+"),            # any user profile
+    re.compile(_DRIVE + r"Program\s*Files"),                  # any Program Files
+    re.compile(_DRIVE + r"(?:mini|ana)conda\d*"),             # any conda install
+    # Assembled from fragments so this file does not match itself.
+    re.compile("%" + "USERPROFILE" + "%|%" + "HOMEPATH" + "%|" + r"\$env:" + "USERPROFILE"),
+)
+
+
 def check_absolute_paths() -> None:
     for path in iter_files():
         if path.suffix in {".png", ".jpg", ".pyc"}:
@@ -75,9 +103,9 @@ def check_absolute_paths() -> None:
         except UnicodeDecodeError:
             problems.append(f"not valid UTF-8: {path.relative_to(REPO)}")
             continue
-        for pattern in (r"C:\\Users\\Admin", r"C:\\Program Files", r"D:\\miniconda3"):
-            if pattern.replace("\\\\", "\\") in text:
-                problems.append(f"machine path leaked in {path.relative_to(REPO)}: {pattern}")
+        for pattern in MACHINE_PATH_PATTERNS:
+            for hit in pattern.findall(text):
+                problems.append(f"machine path leaked in {path.relative_to(REPO)}: {hit}")
 
 
 def check_encoding_and_newline() -> None:

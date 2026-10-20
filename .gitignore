@@ -7,3 +7,16 @@ dist/
 out/
 *.png.tmp
 !examples/**/*.png
+
+# ─── 运行时生成的诊断产物（可能含私人内容） ───────────────────────────────
+# Runtime diagnostics that can contain private content - never commit these.
+sidebar-after-attach.png
+attach-*.png
+shot-*.png
+probe-*.png
+recon-*.png
+*_uia*.txt
+uia-dump*.txt
+recon*.txt
+probe*.txt
+.dsh-bridge-state/

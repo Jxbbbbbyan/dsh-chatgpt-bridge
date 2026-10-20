@@ -369,7 +369,7 @@ repo home, where the page says "Select a branch to upload files"). One `git push
 credential Git Credential Manager already held moved the entire 43-file tree, with structure
 intact, in a single operation.
 
-*Rule:* ask `git credential fill` first. A push is exact, preserves paths, carries a real commit
+*Rule:* let `git` use its credential helper directly — confirm auth with a secret-free `git ls-remote <url>` and **never** print credential-helper output ( `git credential fill` writes the token straight to stdout, where it lands in agent transcripts and command logs). A push is exact, preserves paths, carries a real commit
 message, and is verifiable with one API call. Reserve browser automation for the things git
 cannot do — renaming a repository, editing About, setting topics — and verify each of those on
 the server afterwards (H-23).

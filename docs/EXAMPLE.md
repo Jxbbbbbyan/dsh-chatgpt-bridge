@@ -14,7 +14,7 @@ Artifacts for this example:
 | [`brief.txt`](../examples/undergrad-rebuttal/brief.txt) | the 421-character written brief, exactly as typed |
 | [`followup.txt`](../examples/undergrad-rebuttal/followup.txt) | the single surgical follow-up |
 | [`essay.md`](../examples/undergrad-rebuttal/essay.md) | the finished essay, verbatim |
-| [`chatgpt-transcript-raw.md`](../examples/undergrad-rebuttal/chatgpt-transcript-raw.md) | **ChatGPT's every output, verbatim**, uncleaned |
+| [`chatgpt-transcript-raw.md`](../examples/undergrad-rebuttal/chatgpt-transcript-raw.md) | The captured **successful** conversation, verbatim and uncleaned. Earlier failed attempts are described in the table below but their original transcripts are not included. |
 | [`images/`](../examples/undergrad-rebuttal/images/) | the six slices cut from one 640 × 8260 screenshot |
 
 ---
@@ -29,9 +29,9 @@ Artifacts for this example:
 | 4 | Test arithmetic and CJK | `ask "Reply with just the number: 17*23"`, `ask "只回复两个字：收到"` | `391`, `收到` — Unicode typing confirmed |
 | 5 | Inspect the material | open the source | 640 × 8260 px; too tall to survive a chat UI's downscale |
 | 6 | Slice it | `slicer` | **6 slices**, 640 × 1700, 100 px overlap |
-| 7 | Attach (attempt 1) | `attach-files slice-01..06` | **only 3 attached**, no error — the dialog's name field truncated at ~256 chars |
+| 7 | Attach (attempt 1) | `attach-files` over slice-01…06 (five 640×1700, last 640×260) | **only 3 attached**, no error — the dialog's name field truncated at ~256 chars |
 | 8 | Diagnose | read the dialog through Win32 | the dialog was **invisible to UI Automation's top-level enumeration**; an earlier probe had also left one open |
-| 9 | Fix the tool | batching by character budget; `FindWindowW`; single-process chain | batching added, count asserted per batch |
+| 9 | Fix the tool | batching by character budget; `FindWindowW`; single-process chain | batching added; count printed per batch, not asserted (verify manually) |
 | 10 | Attach the rest | `attach-files slice-04..06` | composer holds **6** attachments |
 | 11 | Brief (attempt 1) | `ask --prompt-file brief.txt` | Aborted: the trailing newline had been typed as Enter and the task went out as **four partial messages** — visible in the raw transcript as four separate `You said:` blocks |
 | 12 | Fix | newline → **Shift+Enter**; strip trailing whitespace | — |
@@ -110,7 +110,8 @@ python -m dsh_chatgpt_bridge.slicer "article-screenshot.jpg" slices
 # 2. confirm the sidebar is reachable and clean
 dsh-chatgpt-bridge find
 dsh-chatgpt-bridge new-chat          # verify 0 attachments and an empty transcript
-dsh-chatgpt-bridge attach-files slices\slice-0*.png
+$files = (Get-ChildItem .\slices\slice-0*.png | Sort-Object Name).FullName
+dsh-chatgpt-bridge attach-files @files
 #    -> assert: composer attachment count == 6
 
 # 3. send the brief, once
@@ -120,5 +121,5 @@ dsh-chatgpt-bridge ask --prompt-file brief.txt --reply-timeout 540 --settle 6
 ```
 
 Two guards will stop you if a step is wrong: no focus, no typing; no matching text, no Enter. If a
-run prints `ABORTED`, nothing reached ChatGPT — read the reason and fix it, and use
+run prints `ABORTED`. That means the run stopped; it does **not** mean nothing reached ChatGPT (text or attachments may already be there) — read the reason, inspect the conversation, and use
 `send --expect-file` when the message survived in the composer.

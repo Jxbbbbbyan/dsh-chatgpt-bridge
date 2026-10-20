@@ -56,7 +56,10 @@ dsh-chatgpt-bridge ask "Reply with just the word: OK"
 ## 附件与长图
 
 ```powershell
-dsh-chatgpt-bridge attach-files slices\slice-0*.png     # 真实 UI：+ → Files and folders → 打开对话框
+$files = (Get-ChildItem .\slices\slice-0*.png | Sort-Object Name).FullName
+dsh-chatgpt-bridge attach-files @files
+# PowerShell 不会给原生程序展开通配符，所以先由 PowerShell 展开
+# 真实 UI：+ → Files and folders → 打开对话框
 dsh-chatgpt-bridge ask --prompt-file brief.txt          # 提示词从 UTF-8 文件读取
 ```
 
@@ -66,7 +69,7 @@ dsh-chatgpt-bridge ask --prompt-file brief.txt          # 提示词从 UTF-8 文
 python -m dsh_chatgpt_bridge.slicer long-screenshot.jpg slices
 ```
 
-一次 640×8260 的截图切出 6 张 640×1700 的切片，再按字符长度分批挂载 —— 因为文件对话框的
+一次 640×8260 的截图切出 6 张切片（前 5 张 640×1700，末张 640×260），再按字符长度分批挂载 —— 因为文件对话框的
 "文件名"框会在约 256 字符处**静默截断**。完整流程与四条关键规则在
 [docs/LONG-SCREENSHOTS.md](docs/LONG-SCREENSHOTS.md)。
 
@@ -74,7 +77,7 @@ python -m dsh_chatgpt_bridge.slicer long-screenshot.jpg slices
 
 真实输入意味着运行期间人无法使用自己的机器。因此：
 
-- **Escape 是急停键**，每个事件发出前都会检查
+- **Escape 是急停键**，在受保护的输入边界检查（每个批次之前，而不是每一个单独事件之前）；回复轮询期间不检查
 - 每次运行都有**时间、事件数、光标距离三重上限**
 - 运行结束或中止后**光标会还原**
 - 工具**宁可中止也不猜**：没有焦点就不打字，内容不符就不回车
@@ -90,6 +93,12 @@ python -m dsh_chatgpt_bridge.slicer long-screenshot.jpg slices
 - [examples/undergrad-rebuttal/](examples/undergrad-rebuttal/) —— 要求原文、追问、成稿、6 张切片，
   以及 ChatGPT 的**逐字转录**
 
+## 它不能替你挡掉什么
+
+- **ChatGPT 界面变了。** 控件查找与回复提取依赖当前的 Edge / ChatGPT 可访问性树，其中还写死了英文界面文案；界面或语言一变，查找可能直接失败，也可能静默返回残缺文本。
+- **运行中被抢焦点。** 定向检查只是降低风险，不是消除风险：打字过程中若有别的窗口获得焦点，输入会落到别处。运行期间请勿操作鼠标键盘。
+- **账号与服务条款。** 自动化一个已登录的 ChatGPT 会话，仍然是在自动化该服务；账号限制与配额可能适用。"不需要 API key"并不等于"不受限制"或"一定允许"——请以当前服务条款为准。
+- **诊断产物里的私人内容。** 挂载文件的运行会在状态目录留下截图（例如 `sidebar-after-attach.png`），而全屏截图会把屏幕上其他内容一并拍进去。请把这些文件视为隐私，不要提交进 git。
 ## 这不是什么
 
 - 不是 API 客户端，也不是 API 客户端的封装
