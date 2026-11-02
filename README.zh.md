@@ -1,10 +1,23 @@
-# dsh-chatgpt-bridge
+# dsh-chatgpt-bridge — Edge 侧栏的 Windows 自动化桥
 
 **让 DSH 里的任意模型，都能跟你在浏览器里已经开着的 ChatGPT 对话 —— 靠真实的鼠标移动和真实的键盘输入。**
 
 [English](README.md) · [完整实例](docs/EXAMPLE.md) · [经验教训](docs/LESSONS.md)
 
 ---
+
+## 特色与适用场景
+
+把 **DSH 技能、Python CLI、Windows SendInput、UI Automation 读取和发送前校验** 接成一条链路。适合让本地代理向自己已打开的 ChatGPT 侧栏提交任务、交付长图附件并读取回复；普通本地脚本也可调用 CLI。
+
+- **已有登录态直接交互**：使用侧栏中的模型和附件入口，不需要 API key。
+- **读文本，少做截图识别**：从无障碍树提取回复，依赖界面暴露的控件结构。
+- **提交前检查**：打字前查焦点，回车前查内容；不能保证运行中焦点永不被抢。
+- **长图有交付流程**：重叠切片、文件名长度控制和分批附件，附实际案例与输出。
+
+[查看用途与证据](docs/USE_CASES.md) · [查看完整实例](docs/EXAMPLE.md)
+
+运行需要交互桌面与 Edge 侧栏；执行输入时请勿同时使用桌面。输入时序不用于绕过服务控制。
 
 ## 这是什么
 

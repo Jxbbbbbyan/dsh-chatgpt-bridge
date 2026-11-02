@@ -1,10 +1,25 @@
-# dsh-chatgpt-bridge
+# dsh-chatgpt-bridge — Windows UI automation for the Edge sidebar
 
 **Let any model inside [DSH](https://github.com/deepseek-ai/deepseek-harness) talk to the ChatGPT that is already open in your browser — by moving a real mouse and typing real keys.**
 
 [中文说明](README.zh.md) · [Worked example](docs/EXAMPLE.md) · [Lessons learned](docs/LESSONS.md)
 
 ---
+
+## Who it helps / 适合谁
+
+For DSH users and Windows developers who want an agent to submit a prompt or attachment to their own open ChatGPT sidebar and read the reply. The distinctive combination is **SendInput actions + UI Automation targeting and text extraction + focus/content checks + long-screenshot delivery**. The CLI can also be invoked from other local scripts; the bundled skills describe the DSH workflow.
+
+面向想让 DSH 代理使用自己已登录 ChatGPT 侧栏的用户，以及需要从本地脚本交付提示词、图片和文件的 Windows 开发者。特色是一条带定位、输入、读取、校验和附件处理的链路；已有长图交付实例可查看。
+
+| Request / 你可能在找 | Route and advantage / 路线与作用 |
+|---|---|
+| Let an AI agent use the ChatGPT web UI / 让代理操作已打开的 ChatGPT | DeepSeek Harness skills → Python CLI → Microsoft Edge sidebar; uses the existing logged-in UI, without an API key |
+| Read the reply without screenshot OCR / 读取回复文字 | Windows UI Automation accessibility tree → transcript text; availability depends on the exposed UI tree |
+| Avoid sending a mistyped prompt / 减少点错输入框和误发送 | Verify composer focus before typing and expected content before Enter; mid-run focus theft remains possible |
+| Send a long article screenshot / 把长文章截图交给模型 | Overlapping image slices + file-dialog batching; see the committed example and its output |
+
+**Start with [setup below](#quick-start), inspect the [worked example](docs/EXAMPLE.md), or read the [capability map](docs/USE_CASES.md).** Windows and an interactive Edge sidebar are required. UI changes can break targeting; keep the desktop hands-off while input is running. The included input timing is not a way to bypass service controls.
 
 ## What this is
 
